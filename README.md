@@ -1,5 +1,9 @@
 # SupportOps AI
 
+## Public portfolio demo
+
+The `render.yaml` Blueprint runs a free demo with fictional tickets and viewer-only access. Agent and admin workflows remain available locally. The hosted SQLite database is temporary and can reset when the service restarts; do not enter real customer data.
+
 A full-stack customer support workspace built with **Python, FastAPI, SQLAlchemy, PostgreSQL/SQLite, React, TypeScript, and scikit-learn**. It combines ticket operations with local AI suggestions that an agent must review.
 
 ## What it does

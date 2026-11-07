@@ -28,10 +28,11 @@ function App() {
   const [error, setError] = React.useState("");
   const [refreshKey, setRefreshKey] = React.useState(0);
   const [demo, setDemo] = React.useState(false);
+  const [publicDemo, setPublicDemo] = React.useState(false);
   const [focusTicketId, setFocusTicketId] = React.useState<number | null>(null);
   React.useEffect(() => {
-    api<{ demo: boolean }>("/api/config")
-      .then((result) => setDemo(result.demo))
+    api<{ demo: boolean; public_demo: boolean }>("/api/config")
+      .then((result) => { setDemo(result.demo); setPublicDemo(result.public_demo); })
       .catch(() => setDemo(false));
   }, []);
   React.useEffect(() => {
@@ -67,7 +68,7 @@ function App() {
   };
   if (!user)
     return (
-      <Login onLogin={login} error={error} setError={setError} demo={demo} />
+      <Login onLogin={login} error={error} setError={setError} demo={demo} publicDemo={publicDemo} />
     );
   const updated = () => setRefreshKey((k) => k + 1);
   const openTicket = (id: number) => {
@@ -129,7 +130,7 @@ function App() {
           <span>WORKSPACE / {page.toUpperCase()}</span>
           <div className="topline-right">
             <span className="status-dot" />{" "}
-            {demo ? "Local demo" : "Workspace online"}{" "}
+            {publicDemo ? "Public read-only demo" : demo ? "Local demo" : "Workspace online"}{" "}
             <span className="top-date">
               {new Date().toLocaleDateString(undefined, {
                 month: "short",
@@ -139,6 +140,7 @@ function App() {
             </span>
           </div>
         </div>
+        {publicDemo && <div className="public-demo-note">Fictional tickets · viewer access only. Run the project locally to try agent and admin workflows.</div>}
         {page === "dashboard" && (
           <Overview
             token={token}
@@ -169,21 +171,23 @@ function Login({
   error,
   setError,
   demo,
+  publicDemo,
 }: {
   onLogin: (email: string, password: string) => Promise<void>;
   error: string;
   setError: (error: string) => void;
   demo: boolean;
+  publicDemo: boolean;
 }) {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [busy, setBusy] = React.useState(false);
   React.useEffect(() => {
     if (demo && !email && !password) {
-      setEmail("agent@demo.local");
+      setEmail(publicDemo ? "viewer@demo.local" : "agent@demo.local");
       setPassword("DemoPass123!");
     }
-  }, [demo, email, password]);
+  }, [demo, publicDemo, email, password]);
   return (
     <div className="login-screen">
       <div className="login-art">
@@ -217,7 +221,7 @@ function Login({
             </span>
           </div>
         </div>
-        <div className="art-footer">A local portfolio demonstration</div>
+        <div className="art-footer">{publicDemo ? "Public portfolio demo · fictional data" : "A local portfolio demonstration"}</div>
       </div>
       <div className="login-panel">
         <form
@@ -239,7 +243,7 @@ function Login({
           <h2>Sign in to your workspace</h2>
           <p>
             {demo
-              ? "Use a demo account to explore the full workflow."
+              ? publicDemo ? "Sign in as a viewer to explore the sample workspace." : "Use a demo account to explore the full workflow."
               : "Enter your workspace credentials."}
           </p>
           <label>
@@ -272,11 +276,11 @@ function Login({
             <div className="demo-box">
               <strong>Demo access</strong>
               <p>
-                Choose a role. Password for all demo accounts:{" "}
+                {publicDemo ? "Viewer password:" : "Choose a role. Password for all demo accounts:"}{" "}
                 <code>DemoPass123!</code>
               </p>
               <div className="role-links">
-                {(["admin", "agent", "viewer"] as Role[]).map((role) => (
+                {(publicDemo ? ["viewer"] : ["admin", "agent", "viewer"] as Role[]).map((role) => (
                   <button
                     type="button"
                     key={role}

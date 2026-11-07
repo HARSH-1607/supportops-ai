@@ -77,5 +77,16 @@ def test_demo_accounts_require_explicit_opt_in(tmp_path, monkeypatch):
     monkeypatch.delenv("BOOTSTRAP_ADMIN_EMAIL", raising=False)
     monkeypatch.delenv("BOOTSTRAP_ADMIN_PASSWORD", raising=False)
     with TestClient(create_app(f"sqlite:///{(tmp_path / 'no_demo.db').as_posix()}")) as client:
-        assert client.get("/api/config").json() == {"demo": False}
+        assert client.get("/api/config").json() == {"demo": False, "public_demo": False}
         assert client.post("/api/auth/login", json={"email": "agent@demo.local", "password": "DemoPass123!"}).status_code == 401
+
+
+def test_public_demo_only_allows_viewer(tmp_path, monkeypatch):
+    monkeypatch.setenv("SUPPORTOPS_PUBLIC_DEMO", "1")
+    with client_for(tmp_path) as client:
+        assert client.get("/api/config").json()["public_demo"] is True
+        assert client.post("/api/auth/login", json={"email": "admin@demo.local", "password": "DemoPass123!"}).status_code == 403
+        assert client.post("/api/auth/login", json={"email": "agent@demo.local", "password": "DemoPass123!"}).status_code == 403
+        viewer = auth(client, "viewer")
+        assert client.get("/api/tickets", headers=viewer).status_code == 200
+        assert client.post("/api/tickets", headers=viewer, json={"title": "Demo question", "description": "This is a fictional support question.", "category": "other"}).status_code == 403

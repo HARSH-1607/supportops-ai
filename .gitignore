@@ -4,6 +4,7 @@
 **/.venv/
 **/node_modules/
 frontend/dist/
+frontend/.npm-cache/
 frontend/tsconfig.tsbuildinfo
 **/*.db
 .env

@@ -139,6 +139,7 @@ def create_app(database_url: str | None = None, seed_demo: bool | None = None) -
     engine = make_engine(database_url)
     SessionLocal = make_session_factory(engine)
     demo = seed_demo if seed_demo is not None else engine.url.get_backend_name() == "sqlite" and os.environ.get("SUPPORTOPS_DEMO", "0") == "1"
+    public_demo = os.environ.get("SUPPORTOPS_PUBLIC_DEMO", "0") == "1"
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI):
@@ -173,13 +174,15 @@ def create_app(database_url: str | None = None, seed_demo: bool | None = None) -
 
     @app.get("/api/config")
     def public_config():
-        return {"demo": demo}
+        return {"demo": demo, "public_demo": public_demo}
 
     @app.post("/api/auth/login")
     def login(payload: LoginIn, db: Session = Depends(get_db)):
         user = db.scalar(select(User).where(User.email == payload.email.strip().lower()))
         if user is None or not verify_password(payload.password, user.password_hash):
             raise HTTPException(status_code=401, detail="Invalid credentials")
+        if public_demo and user.role != "viewer":
+            raise HTTPException(status_code=403, detail="Public demo access is limited to the viewer role")
         return {"token": new_token(db, user), "user": user_dict(user)}
 
     @app.post("/api/auth/logout")

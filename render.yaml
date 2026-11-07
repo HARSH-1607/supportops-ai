@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: supportops-ai-demo
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:////tmp/supportops.db
+      - key: SUPPORTOPS_DEMO
+        value: "1"
+      - key: SUPPORTOPS_PUBLIC_DEMO
+        value: "1"

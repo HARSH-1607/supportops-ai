@@ -1,23 +1,40 @@
-# SupportOps AI
+<div align="center">
+  <img src="docs/cover.svg" alt="SupportOps AI: ticket queue, human review, and operations dashboard" width="100%" />
 
-## Public portfolio demo
+  # SupportOps AI
 
-The `render.yaml` Blueprint runs a free demo with fictional tickets and viewer-only access. Agent and admin workflows remain available locally. The hosted SQLite database is temporary and can reset when the service restarts; do not enter real customer data.
+  **A customer support workspace with human-reviewed AI triage.**
 
-A full-stack customer support workspace built with **Python, FastAPI, SQLAlchemy, PostgreSQL/SQLite, React, TypeScript, and scikit-learn**. It combines ticket operations with local AI suggestions that an agent must review.
+  [Live demo](https://supportops-ai-demo.onrender.com/) · [Source code](https://github.com/HARSH-1607/supportops-ai) · [API docs](https://supportops-ai-demo.onrender.com/docs)
+</div>
+
+> **Explore the demo:** Open the dashboard, search fictional tickets, and inspect priority and duplicate suggestions. The public site has viewer-only access. Agent and admin actions are available locally. Hosted data may reset after a service restart; do not enter real customer data.
 
 ## What it does
 
-- **Ticket management:** create, search, filter, assign, comment, and move tickets through open, in progress, waiting, and resolved states.
-- **Role-based access:** admins create users and change roles; admins and agents work tickets; viewers have read-only access. Sessions use bearer tokens and salted `scrypt` password hashes.
-- **Operations dashboard:** status, priority, and category counts; ticket volume; agent workload; urgent and unreviewed queues.
-- **Actionable interface:** a human review queue opens the selected ticket, and compact ticket cards keep status, priority, and assignee visible on narrow screens.
-- **AI triage:** TF-IDF plus logistic regression suggests a priority; character n-gram similarity ranks possible duplicates. A person explicitly confirms or overrides the priority and duplicate link. Every decision is recorded in the activity log.
-- **API and data integrity:** documented REST endpoints at `/docs`, input validation, indexed relational tables, parameterized queries, and version checks to prevent stale ticket updates.
+| Area | Implementation |
+| --- | --- |
+| Ticket workflow | Create, search, filter, assign, comment, and move tickets through open, in progress, waiting, and resolved states. |
+| AI-assisted triage | TF-IDF plus logistic regression suggests priority; character n-gram similarity identifies possible duplicates. A person confirms or overrides both. |
+| Operations dashboard | Status and priority mix, ticket volume, agent workload, urgent tickets, and unreviewed queues. |
+| Access and audit | Admin, agent, and viewer roles; bearer-token sessions, salted scrypt password hashes, activity history, and version checks against stale updates. |
+
+## Architecture
+
+```mermaid
+flowchart LR
+  UI[React + TypeScript] --> API[FastAPI REST API]
+  API --> DB[(PostgreSQL or SQLite)]
+  API --> AI[Priority and duplicate models]
+  AI --> REVIEW[Human review]
+  REVIEW --> DB
+```
+
+Python, FastAPI, SQLAlchemy, and scikit-learn power the backend. React, TypeScript, and Vite power the UI. SQLite simplifies local setup; Docker Compose runs PostgreSQL.
 
 ## Run locally
 
-Requires Python 3.11+ and Node.js 20+.
+Requires Python 3.11+ and Node.js 20+. From the repository root in PowerShell:
 
 ```powershell
 python -m venv .venv
@@ -31,52 +48,29 @@ $env:SUPPORTOPS_DEMO = "1"
 uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
-Open **http://127.0.0.1:8000**. On first local launch, the app creates `backend/supportops.db`, three demo users, and four sample tickets.
+Open <http://127.0.0.1:8000>. The first demo launch creates a SQLite database, three accounts, and four fictional tickets.
 
-| Role | Email | Password |
+| Local role | Email | Password |
 | --- | --- | --- |
 | Admin | `admin@demo.local` | `DemoPass123!` |
 | Agent | `agent@demo.local` | `DemoPass123!` |
 | Viewer | `viewer@demo.local` | `DemoPass123!` |
 
-Demo accounts are for local evaluation only and are disabled by default. For a non-demo first run, set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` instead of `SUPPORTOPS_DEMO=1`.
+These credentials are **only for local evaluation**. Demo accounts are disabled by default. For a non-demo first run, omit `SUPPORTOPS_DEMO` and set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD`. For frontend development, run `npm run dev` in `frontend` while the API runs on port 8000. For PostgreSQL, copy `.env.example` to `.env`, replace sample passwords, and run `docker compose up --build`.
 
-For frontend development, run `npm run dev` inside `frontend` while the backend runs on port 8000. Vite proxies `/api` to the backend.
+## API and verification
 
-## PostgreSQL with Docker Compose
-
-Copy `.env.example` to `.env`, replace all sample passwords, then run `docker compose up --build`. The app is available at http://127.0.0.1:8000. Docker Compose uses PostgreSQL, and the backend can also connect to any compatible database through `DATABASE_URL` (`postgresql+psycopg://...`).
-
-## Tests
-
-```powershell
-cd backend
-pytest -q
-```
-
-The tests cover role permissions, ticket creation and search, advisory AI output, human review, duplicate links, comments, dashboard metrics, audit history, and optimistic concurrency. The frontend is type-checked and compiled with `npm run build`.
-
-GitHub Actions runs the backend tests, frontend formatting check, and production build on every push and pull request.
-
-## API map
-
-| Endpoint | Use |
+| Route | Purpose |
 | --- | --- |
-| `POST /api/auth/login` | Sign in |
-| `GET /api/me` | Current user |
-| `GET/POST /api/tickets` | Search or create tickets |
-| `GET/PATCH /api/tickets/{id}` | Read or update a ticket |
-| `GET /api/tickets/{id}/suggestions` | Get AI priority and duplicate suggestions |
-| `POST /api/tickets/{id}/review` | Record a human decision |
+| `POST /api/auth/login`, `GET /api/me` | Sign in and load the user |
+| `GET/POST /api/tickets`, `GET/PATCH /api/tickets/{id}` | Search, create, read, and update tickets |
+| `GET /api/tickets/{id}/suggestions`, `POST /api/tickets/{id}/review` | Inspect AI suggestions and record the final decision |
 | `POST /api/tickets/{id}/comments` | Add an internal note |
-| `GET /api/dashboard` | Operations metrics |
-| `GET/POST /api/users`, `PATCH /api/users/{id}` | List users, create a user, or change a role (admin writes) |
-| `GET /api/audit` | Recent audit events (admin) |
+| `GET /api/dashboard`, `GET /api/audit` | Operations metrics and audit history |
+| `GET/POST /api/users`, `PATCH /api/users/{id}` | Manage users and roles |
 
-## AI design and limits
+Interactive API documentation is at `/docs`. Run `cd backend; pytest -q` for backend tests. They cover permissions, ticket operations, AI suggestions, human review, duplicate links, dashboard metrics, audit history, and optimistic concurrency. GitHub Actions checks backend tests, frontend formatting, and the production build.
 
-The priority model is a small, deterministic demonstration trained on example support text in `backend/app/ai.py`. Its probability is a model score, **not calibrated certainty**. The duplicate detector compares a ticket with up to 500 recent tickets. It never merges tickets automatically. This baseline makes the workflow fully local and reproducible, but a real deployment would need labeled historical tickets, evaluation by category and severity, drift monitoring, and a more scalable retrieval index.
+## Limits
 
-## Production next steps
-
-Add database migrations, rate limits and lockout on login, password reset, secret management, monitoring, CSRF-safe cookie sessions or short-lived tokens with refresh, and a real model evaluation set. The project is a portfolio demonstration, not a deployed production service.
+The priority model is trained on a small set of example text; its score is **not calibrated certainty**. Duplicate detection compares up to 500 recent tickets and never merges automatically. Production use would require historical labeled data, model evaluation, migrations, login rate limits, monitoring, and stronger session management. This is a portfolio demo, not a production support system.

@@ -32,7 +32,10 @@ function App() {
   const [focusTicketId, setFocusTicketId] = React.useState<number | null>(null);
   React.useEffect(() => {
     api<{ demo: boolean; public_demo: boolean }>("/api/config")
-      .then((result) => { setDemo(result.demo); setPublicDemo(result.public_demo); })
+      .then((result) => {
+        setDemo(result.demo);
+        setPublicDemo(result.public_demo);
+      })
       .catch(() => setDemo(false));
   }, []);
   React.useEffect(() => {
@@ -68,7 +71,13 @@ function App() {
   };
   if (!user)
     return (
-      <Login onLogin={login} error={error} setError={setError} demo={demo} publicDemo={publicDemo} />
+      <Login
+        onLogin={login}
+        error={error}
+        setError={setError}
+        demo={demo}
+        publicDemo={publicDemo}
+      />
     );
   const updated = () => setRefreshKey((k) => k + 1);
   const openTicket = (id: number) => {
@@ -130,7 +139,11 @@ function App() {
           <span>WORKSPACE / {page.toUpperCase()}</span>
           <div className="topline-right">
             <span className="status-dot" />{" "}
-            {publicDemo ? "Public read-only demo" : demo ? "Local demo" : "Workspace online"}{" "}
+            {publicDemo
+              ? "Public read-only demo"
+              : demo
+                ? "Local demo"
+                : "Workspace online"}{" "}
             <span className="top-date">
               {new Date().toLocaleDateString(undefined, {
                 month: "short",
@@ -140,7 +153,12 @@ function App() {
             </span>
           </div>
         </div>
-        {publicDemo && <div className="public-demo-note">Fictional tickets · viewer access only. Run the project locally to try agent and admin workflows.</div>}
+        {publicDemo && (
+          <div className="public-demo-note">
+            Fictional tickets · viewer access only. Run the project locally to
+            try agent and admin workflows.
+          </div>
+        )}
         {page === "dashboard" && (
           <Overview
             token={token}
@@ -221,7 +239,11 @@ function Login({
             </span>
           </div>
         </div>
-        <div className="art-footer">{publicDemo ? "Public portfolio demo · fictional data" : "A local portfolio demonstration"}</div>
+        <div className="art-footer">
+          {publicDemo
+            ? "Public portfolio demo · fictional data"
+            : "A local portfolio demonstration"}
+        </div>
       </div>
       <div className="login-panel">
         <form
@@ -243,7 +265,9 @@ function Login({
           <h2>Sign in to your workspace</h2>
           <p>
             {demo
-              ? publicDemo ? "Sign in as a viewer to explore the sample workspace." : "Use a demo account to explore the full workflow."
+              ? publicDemo
+                ? "Sign in as a viewer to explore the sample workspace."
+                : "Use a demo account to explore the full workflow."
               : "Enter your workspace credentials."}
           </p>
           <label>
@@ -276,11 +300,16 @@ function Login({
             <div className="demo-box">
               <strong>Demo access</strong>
               <p>
-                {publicDemo ? "Viewer password:" : "Choose a role. Password for all demo accounts:"}{" "}
+                {publicDemo
+                  ? "Viewer password:"
+                  : "Choose a role. Password for all demo accounts:"}{" "}
                 <code>DemoPass123!</code>
               </p>
               <div className="role-links">
-                {(publicDemo ? ["viewer"] : ["admin", "agent", "viewer"] as Role[]).map((role) => (
+                {(publicDemo
+                  ? ["viewer"]
+                  : (["admin", "agent", "viewer"] as Role[])
+                ).map((role) => (
                   <button
                     type="button"
                     key={role}
